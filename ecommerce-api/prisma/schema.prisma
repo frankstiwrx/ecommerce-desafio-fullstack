@@ -77,3 +77,4 @@ model CartItem {
 
   @@unique([cartId, productId]) // impede item duplicado do mesmo produto no carrinho
 }
+
