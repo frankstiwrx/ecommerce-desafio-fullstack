@@ -52,5 +52,26 @@ export class ProductsService {
     return { ...p, price: Number(p.price) };
   }
 
+  async update(id: string, dto: any) {
+  const data: any = {};
+  if (dto.name !== undefined) data.name = dto.name;
+  if (dto.description !== undefined) data.description = dto.description ?? null;
+  if (dto.price !== undefined) data.price = new Prisma.Decimal(dto.price);
+  if (dto.stock !== undefined) data.stock = dto.stock;
+
+  const p = await this.prisma.product.update({
+    where: { id },
+    data,
+    select: { id: true, name: true, description: true, price: true, stock: true, createdAt: true },
+  });
+  return { ...p, price: Number(p.price) };
+}
+
+async remove(id: string) {
+  await this.prisma.product.delete({ where: { id } });
+  return { ok: true };
+}
+
+
 
 }
