@@ -4,6 +4,8 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { MailerService } from '../mail/mailer.service';
+
 
 
 
@@ -13,7 +15,12 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @Injectable()
 export class UsersService {
 
-  constructor(private readonly prisma: PrismaService) {}
+  
+
+constructor(
+  private readonly prisma: PrismaService,
+  private readonly mailer: MailerService,
+) {}
 
 
   // users.service.ts
@@ -39,6 +46,8 @@ async create(dto: CreateUserDto) {
 
   await this.prisma.emailVerificationToken.create({ data: { userId: user.id, token, expiresAt } });
   console.log(`[email] GET /auth/verify-email?token=${token}`);
+  await this.mailer.sendVerificationEmail(user.email, token);
+
 
   return user;
 }
