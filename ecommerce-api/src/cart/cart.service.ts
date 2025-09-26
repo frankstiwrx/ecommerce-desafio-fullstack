@@ -1,12 +1,16 @@
 import { PrismaService } from '../prisma/prisma.service';
-import {Injectable,  BadRequestException,  NotFoundException,  ForbiddenException,
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-
+import { MESSAGES } from '../common/messages';
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private mapCart(cart: any) {
     const items = cart.items.map((it: any) => ({
@@ -15,10 +19,12 @@ export class CartService {
       qty: it.qty,
       unitPrice: Number(it.unitPriceSnapshot),
       subtotal: Number(it.unitPriceSnapshot) * it.qty,
-      product: it.product ? {
-        id: it.product.id,
-        name: it.product.name,
-      } : undefined,
+      product: it.product
+        ? {
+            id: it.product.id,
+            name: it.product.name,
+          }
+        : undefined,
     }));
     const total = items.reduce((s: number, i: any) => s + i.subtotal, 0);
     return { id: cart.id, userId: cart.userId, items, total };
@@ -39,36 +45,33 @@ export class CartService {
   }
 
   async addItem(userId: string, dto: { productId: string; qty: number }) {
-    if (dto.qty <= 0) throw new BadRequestException('Quantidade inválida');
+    if (dto.qty <= 0) throw new BadRequestException(MESSAGES.cart.invalidQuantity);
 
-    // produto existe?
     const product = await this.prisma.product.findUnique({
       where: { id: dto.productId },
       select: { id: true, stock: true, price: true, name: true },
     });
-    if (!product) throw new NotFoundException('Produto não encontrado');
-    if (dto.qty > product.stock) throw new BadRequestException('Estoque insuficiente');
+    if (!product) throw new NotFoundException(MESSAGES.product.notFound);
+    if (dto.qty > product.stock) throw new BadRequestException(MESSAGES.product.insufficientStock);
 
-    // garante carrinho do usuário
     const cart = await this.prisma.cart.upsert({
       where: { userId },
       update: {},
       create: { userId },
     });
 
-    // já existe item do mesmo produto?
     const existing = await this.prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: product.id } },
     });
 
     if (existing) {
       const newQty = existing.qty + dto.qty;
-      if (newQty > product.stock) throw new BadRequestException('Estoque insuficiente');
+      if (newQty > product.stock) throw new BadRequestException(MESSAGES.product.insufficientStock);
       await this.prisma.cartItem.update({
         where: { id: existing.id },
         data: {
           qty: newQty,
-          unitPriceSnapshot: product.price, // mantém snapshot atual
+          unitPriceSnapshot: product.price,
         },
       });
     } else {
@@ -82,7 +85,6 @@ export class CartService {
       });
     }
 
-    // retorna carrinho atualizado
     const updated = await this.prisma.cart.findUnique({
       where: { userId },
       include: { items: { include: { product: { select: { id: true, name: true } } } } },
@@ -90,21 +92,18 @@ export class CartService {
     return this.mapCart(updated!);
   }
 
-
   async updateItem(userId: string, itemId: string, qty: number) {
-    if (qty <= 0) throw new BadRequestException('Quantidade inválida');
+    if (qty <= 0) throw new BadRequestException(MESSAGES.cart.invalidQuantity);
 
-    // garante que item existe e pertence ao carrinho do usuário
     const item = await this.prisma.cartItem.findUnique({ where: { id: itemId } });
-    if (!item) throw new NotFoundException('Item não encontrado');
+    if (!item) throw new NotFoundException(MESSAGES.cart.itemNotFound);
 
     const cart = await this.prisma.cart.findUnique({ where: { id: item.cartId } });
-    if (!cart || cart.userId !== userId) throw new ForbiddenException('Acesso negado');
+    if (!cart || cart.userId !== userId) throw new ForbiddenException(MESSAGES.user.forbidden);
 
-    // checa estoque do produto
     const product = await this.prisma.product.findUnique({ where: { id: item.productId } });
-    if (!product) throw new NotFoundException('Produto não encontrado');
-    if (qty > product.stock) throw new BadRequestException('Estoque insuficiente');
+    if (!product) throw new NotFoundException(MESSAGES.product.notFound);
+    if (qty > product.stock) throw new BadRequestException(MESSAGES.product.insufficientStock);
 
     await this.prisma.cartItem.update({
       where: { id: itemId },
@@ -120,10 +119,10 @@ export class CartService {
 
   async removeItem(userId: string, itemId: string) {
     const item = await this.prisma.cartItem.findUnique({ where: { id: itemId } });
-    if (!item) throw new NotFoundException('Item não encontrado');
+    if (!item) throw new NotFoundException(MESSAGES.cart.itemNotFound);
 
     const cart = await this.prisma.cart.findUnique({ where: { id: item.cartId } });
-    if (!cart || cart.userId !== userId) throw new ForbiddenException('Acesso negado');
+    if (!cart || cart.userId !== userId) throw new ForbiddenException(MESSAGES.user.forbidden);
 
     await this.prisma.cartItem.delete({ where: { id: itemId } });
 
@@ -133,7 +132,4 @@ export class CartService {
     });
     return this.mapCart(updated!);
   }
-
-
-
 }

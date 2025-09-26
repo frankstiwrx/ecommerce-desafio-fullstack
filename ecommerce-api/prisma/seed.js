@@ -1,9 +1,7 @@
-// prisma/seed.js
 const { PrismaClient, Prisma } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  // zera só produtos (não mexe em users/carts)
   await prisma.cartItem.deleteMany().catch(() => {});
   await prisma.product.deleteMany().catch(() => {});
 

@@ -12,7 +12,7 @@ export class RolesGuard implements CanActivate {
     ]);
     if (!required?.length) return true;
     const req = ctx.switchToHttp().getRequest();
-    const user = req.user; // vem da JwtStrategy
+    const user = req.user;
     return !!user && required.includes(user.role);
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import { MESSAGES } from '../common/messages';
 
 @Injectable()
 export class MailerService {
@@ -15,10 +16,13 @@ export class MailerService {
     await this.transporter.sendMail({
       from: process.env.MAIL_FROM || process.env.SMTP_USER,
       to,
-      subject: 'Verifique seu e-mail',
-      text: `Clique para verificar: ${verifyUrl}`,
-      html: `<p>Bem-vindo! ✨</p><p>Clique para verificar seu e-mail:</p>
-             <p><a href="${verifyUrl}">${verifyUrl}</a></p>`,
+      subject: MESSAGES.email.verifySubject,
+      text: `${MESSAGES.email.verifyInstruction} ${verifyUrl}`,
+      html: `
+        <h2>${MESSAGES.email.verifyTitle}</h2>
+        <p>${MESSAGES.email.verifyInstruction}</p>
+        <p><a href="${verifyUrl}">${MESSAGES.email.verifyLinkText}</a></p>
+      `,
     });
   }
 }

@@ -11,7 +11,7 @@ export class CreateProductDto {
 
   @IsNumber()
   @Min(0)
-  price: number;          // no service a gente converte p/ Decimal
+  price: number;
 
   @IsNumber()
   @Min(0)

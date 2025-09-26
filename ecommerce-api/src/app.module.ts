@@ -9,7 +9,7 @@ import { MailerModule } from './mail/mailer.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), // <- carrega .env
+    ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     MailerModule,
     UsersModule,
