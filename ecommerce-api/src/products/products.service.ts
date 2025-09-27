@@ -1,11 +1,40 @@
-import { PrismaService } from '../prisma/prisma.service';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import { MESSAGES } from '../common/messages';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly cacheTtl: number;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly config: ConfigService,
+  ) {
+    this.cacheTtl = Number(this.config.get('CACHE_TTL')) || 60;
+  }
+
+  private cacheKeyForList(query: any) {
+    const norm = {
+      q: query.q ?? undefined,
+      minPrice: query.minPrice !== undefined ? Number(query.minPrice) : undefined,
+      maxPrice: query.maxPrice !== undefined ? Number(query.maxPrice) : undefined,
+      inStock: query.inStock === 'true' ? true : query.inStock === 'false' ? false : undefined,
+      page: Number(query.page ?? 1),
+      limit: Number(query.limit ?? 10),
+    };
+    return `products:list:${JSON.stringify(norm)}`;
+  }
+
+  private async invalidateProductsCache() {
+    if ((this.cache as any).store?.reset) {
+      await (this.cache as any).store.reset();
+    }
+  }
 
   async findAll(query: any) {
     const page = Math.max(1, Number(query.page) || 1);
@@ -19,6 +48,15 @@ export class ProductsService {
     if (query.maxPrice !== undefined)
       where.price = { ...(where.price ?? {}), lte: new Prisma.Decimal(Number(query.maxPrice)) };
     if (query.inStock === 'true') where.stock = { gt: 0 };
+
+    const key = this.cacheKeyForList(query);
+    const cached = await this.cache.get<{
+      page: number;
+      limit: number;
+      total: number;
+      items: any[];
+    }>(key);
+    if (cached) return cached;
 
     const [items, total] = await Promise.all([
       this.prisma.product.findMany({
@@ -39,7 +77,10 @@ export class ProductsService {
     ]);
 
     const mapped = items.map((p) => ({ ...p, price: Number(p.price) }));
-    return { page, limit, total, items: mapped };
+    const result = { page, limit, total, items: mapped };
+
+    await this.cache.set(key, result, this.cacheTtl);
+    return result;
   }
 
   async findOne(id: string) {
@@ -75,6 +116,8 @@ export class ProductsService {
         createdAt: true,
       },
     });
+
+    await this.invalidateProductsCache();
     return { ...p, price: Number(p.price) };
   }
 
@@ -98,6 +141,8 @@ export class ProductsService {
           createdAt: true,
         },
       });
+
+      await this.invalidateProductsCache();
       return { ...p, price: Number(p.price) };
     } catch (e: any) {
       if (e?.code === 'P2025') throw new NotFoundException(MESSAGES.product.notFound);
@@ -108,6 +153,7 @@ export class ProductsService {
   async remove(id: string) {
     try {
       await this.prisma.product.delete({ where: { id } });
+      await this.invalidateProductsCache();
       return { ok: true };
     } catch (e: any) {
       if (e?.code === 'P2025') throw new NotFoundException(MESSAGES.product.notFound);
