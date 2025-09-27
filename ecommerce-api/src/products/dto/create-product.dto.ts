@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumber, IsOptional, IsString, Min, MinLength, IsUrl } from 'class-validator';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Camisa Barcelona 23/24' })
@@ -11,6 +11,11 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({ example: 'https://images.example.com/produto.jpg' })
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
 
   @ApiProperty({ example: 299.9 })
   @IsNumber()

@@ -70,6 +70,7 @@ export class ProductsService {
           description: true,
           price: true,
           stock: true,
+          imageUrl: true,
           createdAt: true,
         },
       }),
@@ -92,6 +93,7 @@ export class ProductsService {
         description: true,
         price: true,
         stock: true,
+        imageUrl: true,
         createdAt: true,
       },
     });
@@ -106,6 +108,7 @@ export class ProductsService {
         description: dto.description ?? null,
         price: new Prisma.Decimal(dto.price),
         stock: dto.stock,
+        imageUrl: dto.imageUrl ?? null,
       },
       select: {
         id: true,
@@ -113,6 +116,7 @@ export class ProductsService {
         description: true,
         price: true,
         stock: true,
+        imageUrl: true,
         createdAt: true,
       },
     });
@@ -127,6 +131,7 @@ export class ProductsService {
     if (dto.description !== undefined) data.description = dto.description ?? null;
     if (dto.price !== undefined) data.price = new Prisma.Decimal(dto.price);
     if (dto.stock !== undefined) data.stock = dto.stock;
+    if (dto.imageUrl !== undefined) data.imageUrl = dto.imageUrl ?? null;
 
     try {
       const p = await this.prisma.product.update({
@@ -138,6 +143,7 @@ export class ProductsService {
           description: true,
           price: true,
           stock: true,
+          imageUrl: true,
           createdAt: true,
         },
       });

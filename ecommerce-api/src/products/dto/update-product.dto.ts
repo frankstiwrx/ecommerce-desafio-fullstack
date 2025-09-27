@@ -9,6 +9,9 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
   @ApiPropertyOptional({ example: 'Camisa oficial, tecido dry fit' })
   description?: string;
 
+  @ApiPropertyOptional({ example: 'https://images.example.com/produto.jpg' })
+  imageUrl?: string;
+
   @ApiPropertyOptional({ example: 299.9 })
   price?: number;
 

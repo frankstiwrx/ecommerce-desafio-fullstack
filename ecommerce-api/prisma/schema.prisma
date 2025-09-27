@@ -42,6 +42,7 @@ model EmailVerificationToken {
 model Product {
   id          String   @id @default(uuid())
   name        String
+  imageUrl    String?
   description String?
   price       Decimal  @db.Decimal(10,2)
   stock       Int      @default(0)
