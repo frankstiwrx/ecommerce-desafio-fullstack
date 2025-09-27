@@ -3,12 +3,16 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import type { Response } from 'express';
 import { MESSAGES } from '../common/messages';
+import { ApiBody, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Get('verify-email')
+  @ApiQuery({ name: 'token', required: true, description: 'Email verification token' })
+  @ApiOkResponse({ description: 'Returns an HTML page indicating verification result' })
   async verify(@Query('token') token: string, @Res() res: Response) {
     try {
       await this.authService.verifyEmail(token);
@@ -33,6 +37,11 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiBody({ type: LoginDto, description: 'User credentials' })
+  @ApiOkResponse({
+    description: 'Returns a JWT access token',
+    schema: { example: { accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' } },
+  })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
   }

@@ -1,9 +1,8 @@
-import { ConflictException, Injectable, NotImplementedException } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { MailerService } from '../mail/mailer.service';
 import { MESSAGES } from '../common/messages';
 
@@ -15,7 +14,9 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto) {
-    const exists = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const exists = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (exists) throw new ConflictException(MESSAGES.user.alreadyExists);
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -49,21 +50,5 @@ export class UsersService {
     await this.mailer.sendVerificationEmail(user.email, token);
 
     return user;
-  }
-
-  findAll() {
-    throw new NotImplementedException(MESSAGES.common.notImplementedYet);
-  }
-
-  findOne(id: number) {
-    throw new NotImplementedException(MESSAGES.common.notImplementedYet);
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    throw new NotImplementedException(MESSAGES.common.notImplementedYet);
-  }
-
-  remove(id: number) {
-    throw new NotImplementedException(MESSAGES.common.notImplementedYet);
   }
 }
