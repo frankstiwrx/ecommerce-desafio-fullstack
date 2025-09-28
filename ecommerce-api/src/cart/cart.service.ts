@@ -23,6 +23,7 @@ export class CartService {
         ? {
             id: it.product.id,
             name: it.product.name,
+            imageUrl: it.product.imageUrl ?? undefined,
           }
         : undefined,
     }));
@@ -33,20 +34,31 @@ export class CartService {
   async getOrCreateCart(userId: string) {
     let cart = await this.prisma.cart.findUnique({
       where: { userId },
-      include: { items: { include: { product: { select: { id: true, name: true } } } } },
+      include: {
+        items: {
+          include: { product: { select: { id: true, name: true, imageUrl: true } } },
+        },
+      },
     });
     if (!cart) {
       cart = await this.prisma.cart.create({
         data: { userId },
-        include: { items: { include: { product: { select: { id: true, name: true } } } } },
+        include: {
+          items: {
+            include: { product: { select: { id: true, name: true, imageUrl: true } } },
+          },
+        },
       });
     }
     return this.mapCart(cart);
   }
 
   async addItem(userId: string, dto: { productId: string; qty: number }) {
+    if (!dto?.productId || typeof dto.qty !== 'number')
+      throw new BadRequestException(MESSAGES.cart.invalidQuantity);
     if (dto.qty <= 0) throw new BadRequestException(MESSAGES.cart.invalidQuantity);
 
+    // produto existe?
     const product = await this.prisma.product.findUnique({
       where: { id: dto.productId },
       select: { id: true, stock: true, price: true, name: true },
@@ -54,12 +66,14 @@ export class CartService {
     if (!product) throw new NotFoundException(MESSAGES.product.notFound);
     if (dto.qty > product.stock) throw new BadRequestException(MESSAGES.product.insufficientStock);
 
+    // garante carrinho do usuário
     const cart = await this.prisma.cart.upsert({
       where: { userId },
       update: {},
       create: { userId },
     });
 
+    // já existe item do mesmo produto?
     const existing = await this.prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId: product.id } },
     });
@@ -71,7 +85,7 @@ export class CartService {
         where: { id: existing.id },
         data: {
           qty: newQty,
-          unitPriceSnapshot: product.price,
+          unitPriceSnapshot: new Prisma.Decimal(product.price),
         },
       });
     } else {
@@ -87,7 +101,11 @@ export class CartService {
 
     const updated = await this.prisma.cart.findUnique({
       where: { userId },
-      include: { items: { include: { product: { select: { id: true, name: true } } } } },
+      include: {
+        items: {
+          include: { product: { select: { id: true, name: true, imageUrl: true } } },
+        },
+      },
     });
     return this.mapCart(updated!);
   }
@@ -95,24 +113,34 @@ export class CartService {
   async updateItem(userId: string, itemId: string, qty: number) {
     if (qty <= 0) throw new BadRequestException(MESSAGES.cart.invalidQuantity);
 
+    // item existe?
     const item = await this.prisma.cartItem.findUnique({ where: { id: itemId } });
     if (!item) throw new NotFoundException(MESSAGES.cart.itemNotFound);
 
+    // pertence ao carrinho do usuário?
     const cart = await this.prisma.cart.findUnique({ where: { id: item.cartId } });
     if (!cart || cart.userId !== userId) throw new ForbiddenException(MESSAGES.user.forbidden);
 
-    const product = await this.prisma.product.findUnique({ where: { id: item.productId } });
+    // checa estoque
+    const product = await this.prisma.product.findUnique({
+      where: { id: item.productId },
+      select: { id: true, stock: true, price: true },
+    });
     if (!product) throw new NotFoundException(MESSAGES.product.notFound);
     if (qty > product.stock) throw new BadRequestException(MESSAGES.product.insufficientStock);
 
     await this.prisma.cartItem.update({
       where: { id: itemId },
-      data: { qty, unitPriceSnapshot: product.price },
+      data: { qty, unitPriceSnapshot: new Prisma.Decimal(product.price) },
     });
 
     const updated = await this.prisma.cart.findUnique({
       where: { userId },
-      include: { items: { include: { product: { select: { id: true, name: true } } } } },
+      include: {
+        items: {
+          include: { product: { select: { id: true, name: true, imageUrl: true } } },
+        },
+      },
     });
     return this.mapCart(updated!);
   }
@@ -128,7 +156,11 @@ export class CartService {
 
     const updated = await this.prisma.cart.findUnique({
       where: { userId },
-      include: { items: { include: { product: { select: { id: true, name: true } } } } },
+      include: {
+        items: {
+          include: { product: { select: { id: true, name: true, imageUrl: true } } },
+        },
+      },
     });
     return this.mapCart(updated!);
   }

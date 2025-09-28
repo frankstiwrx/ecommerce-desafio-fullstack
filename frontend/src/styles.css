@@ -1,0 +1,363 @@
+/* =========
+   Theme vars
+   ========= */
+:root {
+  --bg: #0b0d10;
+  --panel: #151922;
+  --muted: #8a93a5;
+  --text: #e9eef7;
+  --brand: #6ea8fe;
+  --ok: #22c55e;
+  --warn: #eab308;
+  --danger: #ef4444;
+  --outline: #222736;
+
+  /* tokens usados no layout atual */
+  --border: #1f2433;
+  --border-soft: #252b3a;
+  --card-bg: #0f1420;
+  --card-img-bg: #0e1220;
+  --header-bg: #0c101a;
+  --footer-text: #a7b0c3;
+  --btn-primary-fg: #06122b;
+}
+
+/* ========
+   Resets
+   ======== */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: Inter, system-ui, Arial, sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, #0b0d10, #0f1320 60%, #0b0d10);
+}
+
+/* =========
+   Container
+   ========= */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* =======
+   Header
+   ======= */
+.header {
+  border-bottom: 1px solid var(--border);
+  background: var(--header-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: saturate(120%) blur(6px);
+}
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-weight: 900;
+  text-decoration: none;
+  color: var(--text);
+  font-size: clamp(20px, 3.2vw, 30px);
+  letter-spacing: 0.2px;
+}
+
+.nav a,
+.btn--link {
+  margin-left: 14px;
+  text-decoration: none;
+  color: var(--muted);
+}
+.btn--link {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* =======
+   Toolbar
+   ======= */
+.toolbar {
+  margin: 18px 0;
+  display: flex;
+  gap: 10px;
+}
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+}
+.input::placeholder {
+  color: #9aa4ba;
+}
+.input--small {
+  width: 90px;
+}
+
+/* =====
+   Grid
+   ===== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+/* ===========
+   Product Card
+   =========== */
+.product-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+  border-color: var(--border-soft);
+}
+.product-card__image img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background: var(--card-img-bg);
+  display: block;
+}
+.product-card__body {
+  padding: 12px;
+}
+.product-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+.product-card__price {
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* =====
+   Button
+   ===== */
+.btn {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 700;
+}
+.btn--primary {
+  background: linear-gradient(180deg, var(--brand), #3b77f0);
+  color: var(--btn-primary-fg);
+}
+.btn--primary:hover {
+  filter: brightness(1.05);
+}
+.btn[disabled],
+button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ============
+   Product page
+   ============ */
+.product-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 24px 0;
+}
+.product-detail__image {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+  background: var(--card-img-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.product-detail__info .price {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 12px 0 18px;
+  color: var(--text);
+}
+
+/* ======
+   Footer
+   ====== */
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  padding: 16px 0;
+  color: var(--footer-text);
+  font-size: 14px;
+  background: transparent;
+}
+
+/* =====
+   State
+   ===== */
+.error {
+  color: var(--danger);
+}
+.hint {
+  color: var(--ok);
+  margin-top: 8px;
+}
+
+/* =========
+   Focus a11y
+   ========= */
+a:focus-visible,
+button:focus-visible,
+.input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* ===========
+   Small tweak
+   =========== */
+.nav a:hover {
+  color: var(--text);
+}
+
+/* ===========================
+   Cart (lista, itens, total)
+   =========================== */
+.cart-list {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.cart-line {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.cart-line img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain; /* imagem sempre contida */
+  background: var(--card-img-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.cart-line .info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cart-line .name {
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.cart-line .price {
+  opacity: 0.9;
+}
+
+.cart-line .qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-line .qty-controls button {
+  background: #1f2937;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cart-line .qty-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cart-line .rm {
+  margin-left: 8px;
+  background: #2a1111;
+  border-color: #512525;
+}
+
+.subtotal {
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* total do carrinho */
+.cart-total {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+.cart-total h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+/* Form padrão */
+.form label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.form .input {
+  margin-bottom: 14px; /* espaço entre campos */
+}
+
+/* Botões alinhados */
+.btn {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: filter 0.15s;
+}
+.btn:hover {
+  filter: brightness(1.1);
+}
+.btn--primary {
+  background: linear-gradient(180deg, #6ea8fe, #3b77f0);
+  color: #06122b;
+}
+.btn--secondary {
+  background: linear-gradient(180deg, #aaa, #777);
+  color: #111;
+}
