@@ -1,14 +1,51 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { apiGet } from "../api";
+import type { User } from "../types";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token")
+  );
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const onChange = () => setToken(localStorage.getItem("token"));
+    window.addEventListener("auth-changed", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("auth-changed", onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    async function fetchMe() {
+      if (!token) {
+        setUser(null);
+        return;
+      }
+      try {
+        const me = await apiGet<User>("/users/me", true);
+        setUser(me);
+      } catch {
+        localStorage.removeItem("token");
+        setUser(null);
+      }
+    }
+    fetchMe();
+  }, [token]);
 
   function logout() {
     localStorage.removeItem("token");
+    window.dispatchEvent(new Event("auth-changed"));
     navigate("/login");
   }
+
+  const displayName =
+    (user?.email?.split("@")[0] ?? "Usuário").slice(0, 18) +
+    (user?.role === "ADMIN" ? " (admin)" : "");
 
   return (
     <div className="app">
@@ -26,12 +63,14 @@ export default function Layout({ children }: { children: ReactNode }) {
             >
               Produtos
             </NavLink>
+
             <NavLink
               to="/cart"
               className={({ isActive }) => (isActive ? "active" : undefined)}
             >
               Carrinho
             </NavLink>
+
             {!token ? (
               <NavLink
                 to="/login"
@@ -40,9 +79,20 @@ export default function Layout({ children }: { children: ReactNode }) {
                 Login
               </NavLink>
             ) : (
-              <button className="btn btn--link" onClick={logout}>
-                Sair
-              </button>
+              <>
+                <NavLink
+                  to="/profile"
+                  className={({ isActive }) =>
+                    isActive ? "active" : undefined
+                  }
+                  title="Meu perfil"
+                >
+                  {displayName}
+                </NavLink>
+                <button className="btn btn--link" onClick={logout}>
+                  Sair
+                </button>
+              </>
             )}
           </nav>
         </div>

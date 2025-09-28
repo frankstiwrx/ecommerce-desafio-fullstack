@@ -7,3 +7,10 @@ export type Product = {
   stock: number;
   createdAt?: string;
 };
+
+export type User = {
+  userId: string;
+  email: string;
+  role: "USER" | "ADMIN";
+  name?: string;
+};
