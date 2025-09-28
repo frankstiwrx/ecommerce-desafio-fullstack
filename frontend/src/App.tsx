@@ -4,6 +4,7 @@ import Home from "./pages/Homes";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import AdminProducts from "./pages/AdminProducts";
 
@@ -15,8 +16,9 @@ export default function App() {
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} /> {}
         <Route path="/profile" element={<Profile />} />
-        <Route path="/admin" element={<AdminProducts />} /> {}
+        <Route path="/admin" element={<AdminProducts />} />
       </Routes>
     </Layout>
   );
