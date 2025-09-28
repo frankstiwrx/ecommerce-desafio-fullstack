@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+
+  backend:
+    container_name: backend
+    build: ./ecommerce-api
+    env_file:
+      - ./ecommerce-api/.env
+    environment:
+      # Banco e Redis apontando para os serviços do compose
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/app?schema=public
+      REDIS_URL: redis://redis:6379
+      # URL pública usada nos links de verificação de e-mail
+      APP_URL: http://localhost:3000
+      # SEED_ON_START: "true" -> roda npm run prisma:seed a cada start
+      # depois que popular, troque para "false" para não repovoar
+      SEED_ON_START: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    command: >
+      sh -c "
+        npx prisma db push &&
+        if [ \"$SEED_ON_START\" = \"true\" ]; then npm run prisma:seed; fi &&
+        node dist/main.js
+      "
+
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    environment:
+      # O React chama o backend exposto em localhost:3000
+      VITE_API_URL: http://localhost:3000
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    command: npm run dev -- --host
+
+volumes:
+  pgdata:
+  redisdata:

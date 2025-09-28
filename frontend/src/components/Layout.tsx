@@ -43,9 +43,12 @@ export default function Layout({ children }: { children: ReactNode }) {
     navigate("/login");
   }
 
+  const isAdmin = user?.role === "ADMIN";
+  const cartLink = isAdmin ? "/profile" : "/cart"; // <- redireciona admin pro perfil
+
   const displayName =
     (user?.email?.split("@")[0] ?? "Usuário").slice(0, 18) +
-    (user?.role === "ADMIN" ? " (admin)" : "");
+    (isAdmin ? " (admin)" : "");
 
   return (
     <div className="app">
@@ -65,7 +68,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </NavLink>
 
             <NavLink
-              to="/cart"
+              to={cartLink}
               className={({ isActive }) => (isActive ? "active" : undefined)}
             >
               Carrinho

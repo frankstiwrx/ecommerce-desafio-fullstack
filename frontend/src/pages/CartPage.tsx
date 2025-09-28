@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiGet, apiPatch, apiDelete } from "../api";
 
 type CartItem = {
@@ -19,6 +20,7 @@ export default function CartPage() {
   const [itemErrors, setItemErrors] = useState<Record<string, string | null>>(
     {}
   );
+  const navigate = useNavigate();
 
   async function load() {
     try {
@@ -27,6 +29,10 @@ export default function CartPage() {
       const data = await apiGet<Cart>("/cart", true);
       setCart(data);
     } catch (e: any) {
+      if (e?.message === "403") {
+        navigate("/admin", { replace: true });
+        return;
+      }
       setErrGlobal("Não foi possível carregar o carrinho. Faça login.");
     } finally {
       setLoading(false);
@@ -113,7 +119,6 @@ export default function CartPage() {
                 </button>
               </div>
 
-              {/* mensagem específica do item */}
               {itemErrors[it.id] && (
                 <p className="error" style={{ marginTop: 6 }}>
                   {itemErrors[it.id]}

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { apiPost } from "../api";
+import { isAdmin } from "../utils/auth";
 
 export type Product = {
   id: string;
@@ -16,10 +17,15 @@ export default function ProductCard({ p }: { p: Product }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [localStock, setLocalStock] = useState<number>(p.stock);
-  const outOfStock = localStock <= 0;
+  const outOfStock = p.stock <= 0;
+  const admin = isAdmin();
 
   async function addOne() {
+    if (admin) {
+      setMsg("Administradores não usam carrinho. Somente visualização.");
+      setTimeout(() => setMsg(null), 1800);
+      return;
+    }
     const token = localStorage.getItem("token");
     if (!token) return nav("/login");
 
@@ -27,17 +33,12 @@ export default function ProductCard({ p }: { p: Product }) {
       setLoading(true);
       setMsg(null);
       await apiPost("/cart/items", { productId: p.id, qty: 1 }, true);
-      setLocalStock((s) => Math.max(0, s - 1)); // decrementa e nunca passa de 0
       setMsg("Adicionado ao carrinho!");
       setTimeout(() => setMsg(null), 1200);
     } catch (err: any) {
-      const text = String(err?.message || "").toLowerCase();
-      if (text.includes("insufficient") || text.includes("estoque")) {
-        setMsg("Sem estoque.");
-        setLocalStock(0); // garante desabilitar
-      } else {
-        setMsg("Erro ao adicionar. Faça login e verifique o estoque.");
-      }
+      setMsg(
+        err?.message || "Erro ao adicionar. Faça login e verifique o estoque."
+      );
       setTimeout(() => setMsg(null), 1800);
     } finally {
       setLoading(false);
@@ -68,10 +69,18 @@ export default function ProductCard({ p }: { p: Product }) {
           <button
             className="btn"
             onClick={addOne}
-            disabled={loading || outOfStock}
-            title={outOfStock ? "Sem estoque" : "Adicionar 1"}
+            disabled={loading || outOfStock || admin}
+            title={
+              admin
+                ? "ADM: apenas visualização"
+                : outOfStock
+                ? "Sem estoque"
+                : "Adicionar 1"
+            }
           >
-            {outOfStock
+            {admin
+              ? "Somente visualização"
+              : outOfStock
               ? "Sem estoque"
               : loading
               ? "Adicionando..."
@@ -80,7 +89,7 @@ export default function ProductCard({ p }: { p: Product }) {
         </div>
 
         <div style={{ fontSize: 13, opacity: 0.9 }}>
-          Estoque: <strong>{localStock}</strong>
+          Estoque: <strong>{p.stock}</strong>
         </div>
 
         {msg && (
