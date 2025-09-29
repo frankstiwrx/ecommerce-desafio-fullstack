@@ -16,7 +16,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const limit = 50;
+  const limit = 12;
 
   async function load() {
     try {
