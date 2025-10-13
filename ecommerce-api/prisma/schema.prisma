@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,19 +12,31 @@ enum Role {
   ADMIN
 }
 
-model User {
-  id                 String   @id @default(uuid())
-  name               String
-  email              String   @unique
-  passwordHash       String
-  role               Role     @default(USER)
-  isEmailVerified    Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+}
 
-  // Relacionamentos
-  cart               Cart?
-  emailVerification  EmailVerificationToken?
+enum PaymentStatus {
+  NOT_PAID
+  PAID
+  FAILED
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  passwordHash    String
+  role            Role     @default(USER)
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  cart              Cart?
+  emailVerification EmailVerificationToken?
+  orders            Order[]
 }
 
 model EmailVerificationToken {
@@ -36,7 +46,7 @@ model EmailVerificationToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Product {
@@ -44,38 +54,68 @@ model Product {
   name        String
   imageUrl    String?
   description String?
-  price       Decimal  @db.Decimal(10,2)
+  price       Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   cartItems   CartItem[]
+  orderItems  OrderItem[]
 
   @@index([name])
 }
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
 }
 
 model CartItem {
-  id                 String   @id @default(uuid())
-  cartId             String
-  productId          String
-  qty                Int
-  unitPriceSnapshot  Decimal  @db.Decimal(10,2)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(uuid())
+  cartId            String
+  productId         String
+  qty               Int
+  unitPriceSnapshot Decimal  @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 
-  @@unique([cartId, productId]) // impede item duplicado do mesmo produto no carrinho
+  @@unique([cartId, productId])
 }
 
+model Order {
+  id            String        @id @default(uuid())
+  userId        String
+  total         Decimal       @db.Decimal(10, 2)
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(NOT_PAID)
+  paymentMethod String?
+  shippingAddr  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  productId  String
+  qty        Int
+  unitPrice  Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}

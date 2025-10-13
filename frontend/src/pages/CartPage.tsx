@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiGet, apiPatch, apiDelete } from "../api";
+import { apiGet, apiPatch, apiDelete, apiPost } from "../api";
 
 type CartItem = {
   id: string;
@@ -20,7 +19,9 @@ export default function CartPage() {
   const [itemErrors, setItemErrors] = useState<Record<string, string | null>>(
     {}
   );
-  const navigate = useNavigate();
+
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutMsg, setCheckoutMsg] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -29,10 +30,6 @@ export default function CartPage() {
       const data = await apiGet<Cart>("/cart", true);
       setCart(data);
     } catch (e: any) {
-      if (e?.message === "403") {
-        navigate("/admin", { replace: true });
-        return;
-      }
       setErrGlobal("Não foi possível carregar o carrinho. Faça login.");
     } finally {
       setLoading(false);
@@ -70,13 +67,60 @@ export default function CartPage() {
     }
   }
 
+  async function checkout() {
+    try {
+      setCheckoutMsg(null);
+      setCheckoutLoading(true);
+
+      const order = await apiPost<{ id: string; total: number; items: any[] }>(
+        "/orders/checkout",
+        {},
+        true
+      );
+
+      setCart((c) => (c ? { ...c, items: [], total: 0 } : c));
+      setCheckoutMsg(`Pedido criado com sucesso! Nº: ${order.id}`);
+    } catch (e: any) {
+      console.error(e); // pra ver no console o que vem
+      const status =
+        e?.status ||
+        (typeof e?.message === "string" && e.message.match(/\d+/)
+          ? Number(e.message.match(/\d+/)[0])
+          : null);
+
+      if (status === 403) {
+        setCheckoutMsg("Apenas usuários comuns podem finalizar compra.");
+      } else if (status === 400) {
+        setCheckoutMsg(
+          e?.message || "Não foi possível finalizar: verifique o estoque."
+        );
+      } else if (status === 401) {
+        setCheckoutMsg("Sessão expirada. Faça login novamente.");
+      } else {
+        setCheckoutMsg(e?.message || "Falha no checkout. Tente novamente.");
+      }
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
   useEffect(() => {
     load();
   }, []);
 
   if (loading) return <p>Carregando carrinho…</p>;
   if (errGlobal && !cart) return <p className="error">{errGlobal}</p>;
-  if (!cart || cart.items.length === 0) return <p>Seu carrinho está vazio.</p>;
+  if (!cart || cart.items.length === 0)
+    return (
+      <section>
+        <h1>Meu carrinho</h1>
+        {checkoutMsg ? (
+          <p className="hint">{checkoutMsg}</p>
+        ) : (
+          <p>Seu carrinho está vazio.</p>
+        )}
+      </section>
+    );
 
   return (
     <section>
@@ -131,9 +175,29 @@ export default function CartPage() {
         ))}
       </div>
 
-      <div className="cart-total">
-        <h2>Total: R$ {cart.total.toFixed(2)}</h2>
+      <div
+        className="cart-total"
+        style={{ display: "flex", alignItems: "center", gap: 12 }}
+      >
+        <h2 style={{ margin: 0 }}>Total: R$ {cart.total.toFixed(2)}</h2>
+        <button
+          className="btn btn--primary"
+          onClick={checkout}
+          disabled={checkoutLoading}
+          title="Finalizar compra"
+        >
+          {checkoutLoading ? "Finalizando…" : "Finalizar compra"}
+        </button>
       </div>
+
+      {checkoutMsg && (
+        <p
+          className={checkoutMsg.startsWith("Pedido criado") ? "hint" : "error"}
+          style={{ marginTop: 10 }}
+        >
+          {checkoutMsg}
+        </p>
+      )}
     </section>
   );
 }

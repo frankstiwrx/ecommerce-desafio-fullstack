@@ -40,4 +40,10 @@ export const MESSAGES = {
     verifyInstruction: 'Click the link below to verify your account:',
     verifyLinkText: 'Verify my email',
   },
+
+  order: {
+    created: 'Order created sucessfully',
+    notFound: 'Order not found',
+    forbidden: 'Acess forbidden',
+  },
 };
