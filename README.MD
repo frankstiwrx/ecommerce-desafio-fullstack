@@ -157,4 +157,7 @@ docker compose exec backend node prisma/seed.js
 A documentação Swagger está disponível em:
 👉 [http://localhost:3000/docs](http://localhost:3000/docs)
 
+## Vídeo Ilustrativo disponível em:
+👉 https://youtu.be/TLwIQu_boGo
+
 
